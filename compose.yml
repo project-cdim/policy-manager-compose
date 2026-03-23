@@ -1,0 +1,69 @@
+services:
+  policy-manager:
+    build:
+      context: ./policy-manager
+      dockerfile: ./Dockerfile
+      args:
+        CACHE_BUST: ${CACHE_BUST:-1}
+    container_name: policy-manager
+    tty: true 
+    ports:
+      - 8010:8010
+      - 3501:3500
+    networks:
+      - cdim-net
+    volumes:
+      - ./policy-manager/config/:/usr/local/lib/python3.14/site-packages/policymanager/config/
+      - policy-manager-log:/var/log/cdim/
+    logging:
+      options:
+        max-size: 50m
+
+  policy-manager-dapr:
+    image: daprio/daprd:edge
+    container_name: policy-manager-dapr
+    command:
+      [
+        "./daprd",
+        "-app-id","policy-manager",
+        "-app-port","8010",
+        "-dapr-http-port","3500",
+        "-placement-host-address","placement:50006",
+        "-config","/configuration/config.yaml",
+        "-resources-path","/components"
+      ]
+    volumes:
+      - "./policy-manager/dapr/components/:/components"
+      - "./policy-manager/dapr/configuration/:/configuration"
+      - "./policy-manager/dapr/secrets/:/secrets"
+    depends_on:
+      - policy-manager
+    network_mode: "service:policy-manager"
+    logging:
+      options:
+        max-size: 50m
+
+  policy-manager-db:
+    image: "postgres:17-alpine3.19"
+    environment: 
+      - POSTGRES_USER=user01
+      - POSTGRES_PASSWORD=P@ssw0rd
+      - POSTGRES_DB=PolicyDB
+    container_name: policy-manager-db
+    networks:
+      - cdim-net
+    volumes:
+      - policy-manager-db:/var/lib/postgresql/data
+      - ./policy-manager-db/init:/docker-entrypoint-initdb.d
+    logging:
+      options:
+        max-size: 50m
+
+networks:
+  cdim-net:
+    external: true
+
+volumes:
+  policy-manager-db:
+  policy-manager-log:
+
