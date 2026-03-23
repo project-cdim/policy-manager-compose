@@ -1,0 +1,3 @@
+[submodule "policy-manager/policy-manager"]
+	path = policy-manager/policy-manager
+	url = https://github.com/project-cdim/policy-manager.git
