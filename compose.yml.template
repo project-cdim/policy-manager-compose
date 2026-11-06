@@ -1,10 +1,18 @@
 services:
   policy-manager:
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
     build:
       context: ./policy-manager
       dockerfile: ./Dockerfile
       args:
-        CACHE_BUST: ${CACHE_BUST:-1}
+        - CACHE_BUST=${CACHE_BUST:-1}
+        - HTTP_PROXY=${HTTP_PROXY}
+        - http_proxy=${HTTP_PROXY}
+        - HTTPS_PROXY=${HTTPS_PROXY}
+        - https_proxy=${HTTPS_PROXY}
     container_name: policy-manager
     tty: true 
     ports:
